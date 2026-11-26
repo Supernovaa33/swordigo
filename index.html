@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blade of Dawn — Petualangan Ala Swordigo</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div id="game-wrapper">
+        <canvas id="game-canvas" width="960" height="540"></canvas>
+
+        <!-- In-Game HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-top">
+                <div class="hud-left">
+                    <div class="level-badge" id="hud-level" title="Level Karakter">LV 1</div>
+                    <div class="bars-container">
+                        <div class="bar-row">
+                            <span class="bar-icon heart-icon">♥</span>
+                            <div class="bar-track hp-track">
+                                <div class="bar-fill hp-fill" id="hud-hp-bar"></div>
+                                <span class="bar-text" id="hud-hp-text">100 / 100</span>
+                            </div>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-icon mana-icon">✦</span>
+                            <div class="bar-track mana-track">
+                                <div class="bar-fill mana-fill" id="hud-mana-bar"></div>
+                                <span class="bar-text" id="hud-mana-text">50 / 50</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-pills">
+                        <div class="pill gold-pill" title="Koin Emas">
+                            <span class="coin-dot">●</span>
+                            <span id="hud-gold">0</span>
+                        </div>
+                        <div class="pill sword-pill" id="hud-sword" title="Senjata Aktif">
+                            ⚔ Pedang Perunggu
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-center">
+                    <div class="stage-banner" id="hud-stage-name">Level 1: Lembah Hijau</div>
+                    <div id="boss-hud" class="boss-hud hidden">
+                        <div class="boss-name" id="boss-name">Malakor, Raja Kegelapan</div>
+                        <div class="boss-track">
+                            <div class="boss-fill" id="boss-hp-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-right">
+                    <button class="icon-btn" id="btn-map" title="Pilih Level">🗺️</button>
+                    <button class="icon-btn" id="btn-mute" title="Suara On/Off">🔊</button>
+                    <button class="icon-btn" id="btn-help" title="Kontrol">❓</button>
+                    <button class="icon-btn" id="btn-pause" title="Jeda (Esc)">⏸</button>
+                </div>
+            </div>
+
+            <!-- Interaction Hint -->
+            <div id="interact-hint" class="interact-hint hidden">
+                Tekan <kbd>E</kbd> untuk berinteraksi
+            </div>
+
+            <!-- Toast Notification -->
+            <div id="toast-box" class="toast-box hidden"></div>
+
+            <!-- XP Bar at Bottom -->
+            <div class="hud-bottom">
+                <div class="xp-wrapper">
+                    <span class="xp-label">XP</span>
+                    <div class="xp-track">
+                        <div class="xp-fill" id="hud-xp-bar"></div>
+                    </div>
+                    <span class="xp-text" id="hud-xp-text">0 / 60</span>
+                </div>
+                <div class="skills-bar">
+                    <div class="skill-slot" id="slot-sword">
+                        <span class="skill-key">J</span>
+                        <span class="skill-icon">⚔</span>
+                        <span class="skill-name">Tebas</span>
+                    </div>
+                    <div class="skill-slot" id="slot-magic">
+                        <span class="skill-key">K</span>
+                        <span class="skill-icon">🔮</span>
+                        <span class="skill-name">Sihir</span>
+                    </div>
+                    <div class="skill-slot locked" id="slot-nova">
+                        <span class="skill-key">L</span>
+                        <span class="skill-icon">🔥</span>
+                        <span class="skill-name">Gelombang</span>
+                    </div>
+                    <div class="skill-slot" id="slot-heal">
+                        <span class="skill-key">H</span>
+                        <span class="skill-icon">✚</span>
+                        <span class="skill-name" id="potion-count">Ramuan (1)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Touch Controls (Mobile / Optional) -->
+        <div id="touch-controls" class="touch-controls hidden">
+            <div class="touch-dpad">
+                <button class="touch-btn" data-key="ArrowLeft">◀</button>
+                <button class="touch-btn" data-key="ArrowDown">▼</button>
+                <button class="touch-btn" data-key="ArrowRight">▶</button>
+            </div>
+            <div class="touch-actions">
+                <button class="touch-btn action-heal" data-key="KeyH">✚</button>
+                <button class="touch-btn action-magic" data-key="KeyK">🔮</button>
+                <button class="touch-btn action-nova" data-key="KeyL">🔥</button>
+                <button class="touch-btn action-interact" data-key="KeyE">E</button>
+                <button class="touch-btn action-sword" data-key="KeyJ">⚔</button>
+                <button class="touch-btn action-jump" data-key="Space">▲</button>
+            </div>
+        </div>
+
+        <!-- Dialogue Box -->
+        <div id="dialogue-overlay" class="dialogue-overlay hidden">
+            <div class="dialogue-card">
+                <div class="dialogue-speaker" id="dialogue-speaker">Tetua Desa</div>
+                <p class="dialogue-text" id="dialogue-text">...</p>
+                <div class="dialogue-footer">
+                    <button class="btn btn-primary" id="btn-dialogue-next">Lanjut (E / Spasi)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Title Screen -->
+        <div id="screen-title" class="modal-screen">
+            <div class="title-card">
+                <div class="game-emblem">⚔️</div>
+                <h1 class="game-title">BLADE OF DAWN</h1>
+                <p class="game-subtitle">Petualangan Pedang & Sihir — Terinspirasi dari Swordigo</p>
+                <div class="title-features">
+                    <span>🗺️ 4 Level Epik + Boss</span>
+                    <span>⚔️ Kombo Pedang & Sihir</span>
+                    <span>📈 Sistem Level Up RPG</span>
+                    <span>💎 Peti Harta & Toko</span>
+                </div>
+                <div class="title-actions">
+                    <button class="btn btn-primary btn-lg" id="btn-new-game">Mulai Petualangan Baru</button>
+                    <button class="btn btn-secondary btn-lg hidden" id="btn-continue">Lanjutkan Save</button>
+                </div>
+                <div class="controls-preview">
+                    <div><kbd>A</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>→</kbd> Jalan</div>
+                    <div><kbd>Spasi</kbd> / <kbd>W</kbd> Lompat (2x)</div>
+                    <div><kbd>J</kbd> / <kbd>Z</kbd> Serang Pedang</div>
+                    <div><kbd>K</kbd> / <kbd>X</kbd> Bola Sihir</div>
+                    <div><kbd>L</kbd> / <kbd>C</kbd> Gelombang Api</div>
+                    <div><kbd>H</kbd> Pakai Ramuan • <kbd>E</kbd> Interaksi</div>
+                </div>
+                <label class="touch-toggle">
+                    <input type="checkbox" id="toggle-touch"> Tampilkan Tombol Sentuh di Layar
+                </label>
+            </div>
+        </div>
+
+        <!-- Level Up Modal -->
+        <div id="screen-levelup" class="modal-screen hidden">
+            <div class="modal-card levelup-card">
+                <div class="levelup-badge">NAIK LEVEL!</div>
+                <h2 id="levelup-title">Level 2 Tercapai!</h2>
+                <p>Pilih berkah kekuatan untuk karaktermu (seperti Swordigo):</p>
+                <div class="upgrade-choices">
+                    <button class="upgrade-card" data-stat="hp">
+                        <div class="upgrade-icon">❤️</div>
+                        <div class="upgrade-name">Vitalitas</div>
+                        <div class="upgrade-desc">+25 Max HP & Pulihkan HP Penuh</div>
+                    </button>
+                    <button class="upgrade-card" data-stat="atk">
+                        <div class="upgrade-icon">⚔️</div>
+                        <div class="upgrade-name">Kekuatan Pedang</div>
+                        <div class="upgrade-desc">+5 Damage Tebasan Pedang</div>
+                    </button>
+                    <button class="upgrade-card" data-stat="mag">
+                        <div class="upgrade-icon">🔮</div>
+                        <div class="upgrade-name">Energi Sihir</div>
+                        <div class="upgrade-desc">+15 Max Mana & +6 Damage Sihir</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="screen-shop" class="modal-screen hidden">
+            <div class="modal-card shop-card">
+                <div class="shop-header">
+                    <h2>🛒 Kedai Petualang</h2>
+                    <div class="pill gold-pill"><span class="coin-dot">●</span> <span id="shop-gold">0</span></div>
+                </div>
+                <div class="shop-items" id="shop-items"></div>
+                <button class="btn btn-secondary" id="btn-close-shop">Tutup Kedai (Esc)</button>
+            </div>
+        </div>
+
+        <!-- Level Select Modal -->
+        <div id="screen-levels" class="modal-screen hidden">
+            <div class="modal-card levels-card">
+                <h2>🗺️ Peta Dunia</h2>
+                <p class="muted">Pilih level yang sudah terbuka untuk dijelajahi kembali:</p>
+                <div class="level-list" id="level-list"></div>
+                <button class="btn btn-secondary" id="btn-close-levels">Kembali</button>
+            </div>
+        </div>
+
+        <!-- Pause Modal -->
+        <div id="screen-pause" class="modal-screen hidden">
+            <div class="modal-card">
+                <h2>⏸ Permainan Dijeda</h2>
+                <div class="controls-preview compact">
+                    <div><kbd>A</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>→</kbd> Gerak</div>
+                    <div><kbd>W</kbd>/<kbd>Spasi</kbd> Lompat & Lompat Ganda</div>
+                    <div><kbd>S</kbd>/<kbd>↓</kbd> Turun Platform / Tusuk Bawah</div>
+                    <div><kbd>J</kbd>/<kbd>Z</kbd> Kombo Pedang (3x)</div>
+                    <div><kbd>K</kbd>/<kbd>X</kbd> Bola Sihir (Aktifkan Kristal)</div>
+                    <div><kbd>L</kbd>/<kbd>C</kbd> Gelombang Api (Buka di Lv 2)</div>
+                    <div><kbd>H</kbd> Minum Ramuan Penyembuh</div>
+                    <div><kbd>E</kbd> Bicara / Buka Peti / Masuk Portal</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="btn-resume">Lanjutkan</button>
+                    <button class="btn btn-secondary" id="btn-restart-level">Ulang Level Ini</button>
+                    <button class="btn btn-danger" id="btn-to-title">Ke Menu Utama</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="screen-gameover" class="modal-screen hidden">
+            <div class="modal-card gameover-card">
+                <h2>💀 Ksatria Gugur</h2>
+                <p>Kegelapan terlalu kuat... namun cahaya fajar masih menunggumu.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="btn-retry">Bangkit di Checkpoint</button>
+                    <button class="btn btn-secondary" id="btn-gameover-title">Menu Utama</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Victory Modal -->
+        <div id="screen-victory" class="modal-screen hidden">
+            <div class="modal-card victory-card">
+                <div class="game-emblem">👑</div>
+                <h2>KEMENANGAN!</h2>
+                <p>Malakor, Raja Kegelapan telah dikalahkan! Dunia Aethelgard kembali damai di bawah cahaya Pedang
+                    Fajar.</p>
+                <div class="victory-stats" id="victory-stats"></div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="btn-victory-continue">Jelajahi Level Lain</button>
+                    <button class="btn btn-secondary" id="btn-victory-new">Main Dari Awal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="./audio.js"></script>
+    <script defer src="./levels.js"></script>
+    <script defer src="./entities.js"></script>
+    <script defer src="./renderer.js"></script>
+    <script defer src="./game.js"></script>
+</body>
+
+</html>
